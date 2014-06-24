@@ -7,11 +7,27 @@
 <script>
     
     function ComicCtrl($scope, $http) {
-        $scope.comicWrapper = {data: {results:[]}};
+        $scope.comicWrapper = { data: { results: [] } };
+        $scope.characters = {};
         var results = $http.get('api/comics');
         results.success(function (data) {
             $scope.comicWrapper = data;
+            for (var i = 0; i < data.data.results.length; i++) {
+                $http.get('api/comics/' + data.data.results[i].id + '/characters', { comicid: data.data.results[i].id })
+                    .success(function (characters, a, b, c) {
+                        $scope.characters[c.comicid] = characters;
+                });
+            }
         });
+
+        $scope.getCharacters = function(comicId) {
+            var names = "";
+           angular.forEach($scope.characters[comicId].data.results, function(val, key) {
+               names += val.name + ", ";
+           });
+
+            alert(names);
+        };
     }
 
 </script>
@@ -22,7 +38,10 @@
         <tbody>
         <tr data-ng-repeat="comic in comicWrapper.data.results">
             <td>
-                    {{comic.title}} - {{comic.description}}
+                {{comic.title}} - {{comic.description}}
+                <p>
+                    <button ng-click="getCharacters({{comic.id}})">Characters</button>
+                </p>
             </td>
             <td>
                 <img ng-src="{{comic.thumbnail.path}}.{{comic.thumbnail.extension}}" style="width:50%; height: auto"/>

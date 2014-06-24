@@ -13,6 +13,13 @@ namespace MarvelApi.Services
     [Route("/Comics")]
     public class ComicRequest
     {
+        public string Title { get; set; }
+    }
+    
+    [Route("/Comics/{ComicId}/Characters")]
+    public class ComicCharactersRequest
+    {
+        public int ComicId { get; set; }
     }
 
     public class ComicsService : Service
@@ -24,9 +31,25 @@ namespace MarvelApi.Services
             var url = "http://gateway.marvel.com/v1/public/comics"
                 .AddQueryParam("ts", ts)
                 .AddQueryParam("apikey", "de057f1f51e36402aeeafea0fd5a5936")
+                .AddQueryParam("hash", hash)
+                .AddQueryParam("title", "Avengers: The Initiative");
+
+
+            return url.GetJsonFromUrl().FromJson<ComicDataWrapper>();
+        }
+
+        public CharacterDataWrapper Get(ComicCharactersRequest request)
+        {
+            var ts = Guid.NewGuid();
+            var hash = GetMd5Hash(MD5.Create(), ts + ConfigurationManager.AppSettings["marvelPrivateKey"] + ConfigurationManager.AppSettings["marvelPublicKey"]);
+            var url = "http://gateway.marvel.com/v1/public/comics/" + request.ComicId + "/characters"
+                .AddQueryParam("ts", ts)
+                .AddQueryParam("apikey", "de057f1f51e36402aeeafea0fd5a5936")
                 .AddQueryParam("hash", hash);
 
-            return url.GetJsonFromUrl().FromJson<ComicDataWrapper>(); ;
+            var resp = url.GetJsonFromUrl().FromJson<CharacterDataWrapper>();
+
+            return resp;
         }
 
         private static string GetMd5Hash(MD5 md5Hash, string input)
