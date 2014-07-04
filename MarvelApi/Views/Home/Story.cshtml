@@ -1,0 +1,35 @@
+﻿@{
+    ViewBag.Title = "Story";
+}
+
+<h2>Story</h2>
+
+<div ng-app>
+    <div ng-controller="StoryCtrl">
+        <div id="storyText">
+            <div ng-repeat="ln in storyText">
+                {{ln}} 
+            </div>
+        </div>
+        
+        <div class="form-inline" role="form">
+            <div class="form-group">
+                <input type="text" class="form-control" id="command" ng-model="user.command">
+                <button class="btn btn-default" ng-click="sendCommand()">Send</button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    function StoryCtrl($scope, $http) {
+        $scope.storyText = [];
+        $scope.storyText.push(["Can you help me find some comics"]);
+
+        $scope.sendCommand = function() {
+            $scope.storyText.push([$scope.user.command]);
+        };
+    }
+
+</script>

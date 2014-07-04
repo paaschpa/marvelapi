@@ -13,5 +13,9 @@ namespace MarvelApi.Controllers
             return View();
         }
 
+        public ActionResult Story()
+        {
+            return View();
+        }
     }
 }

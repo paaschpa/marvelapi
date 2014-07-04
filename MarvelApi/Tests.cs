@@ -8,6 +8,7 @@ using System.Web;
 using MarvelApi.Models;
 using NUnit.Framework;
 using ServiceStack;
+using ServiceStack.Redis;
 
 namespace MarvelApi
 {
