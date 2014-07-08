@@ -14,11 +14,11 @@ namespace Tests
 {
     public class Tests {
         [Test]
-        public void writeToRedis()
+        public void writeToRedisComics()
         {
-            var offset = 0;
+            var offset = 24600;
 
-            for (var i = 0; i <= 100; i++)
+            for (var i = 0; i <= 400; i++)
             {
                 var ts = Guid.NewGuid();
                 var hash = GetMd5Hash(MD5.Create(),
@@ -32,7 +32,11 @@ namespace Tests
                     .AddQueryParam("offset", offset)
                     .AddQueryParam("orderBy", "issueNumber");
 
+                var st = DateTime.Now;
+                Console.WriteLine(st);
                 var resp = url.GetJsonFromUrl().FromJson<ComicDataWrapper>();
+                Console.WriteLine(offset);
+                Console.WriteLine(DateTime.Now - st);
                 offset += 100;
 
                 using (var redisClient = new RedisClient())
@@ -40,6 +44,42 @@ namespace Tests
                     foreach(var c in resp.data.results)
                     {
                         redisClient.Set("urn:Comics:" + c.id, c);
+                    }
+                }
+            }
+        }
+
+        [Test]
+        public void writeToRedisCharacter()
+        {
+            var offset = 0;
+
+            for (var i = 0; i <= 20; i++)
+            {
+                var ts = Guid.NewGuid();
+                var hash = GetMd5Hash(MD5.Create(),
+                                      ts + ConfigurationManager.AppSettings["marvelPrivateKey"] +
+                                      ConfigurationManager.AppSettings["marvelPublicKey"]);
+                var url = "http://gateway.marvel.com/v1/public/characters"
+                    .AddQueryParam("ts", ts)
+                    .AddQueryParam("apikey", "de057f1f51e36402aeeafea0fd5a5936")
+                    .AddQueryParam("hash", hash)
+                    .AddQueryParam("limit", 100)
+                    .AddQueryParam("offset", offset)
+                    .AddQueryParam("orderBy", "name");
+
+                var st = DateTime.Now;
+                Console.WriteLine(st);
+                var resp = url.GetJsonFromUrl().FromJson<CharacterDataWrapper>();
+                Console.WriteLine(offset);
+                Console.WriteLine(DateTime.Now - st);
+                offset += 100;
+
+                using (var redisClient = new RedisClient())
+                {
+                    foreach (var c in resp.data.results)
+                    {
+                        redisClient.Set("urn:Characters:" + c.id, c);
                     }
                 }
             }
