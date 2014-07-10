@@ -49,6 +49,16 @@ namespace MarvelApi.Models
         public List<ComicSummary> collections { get; set; }
         public List<ComicSummary> collectedIssues { get; set; }
         public List<ComicDate> dates { get; set; }
+        public DateTime? onSaleDate { 
+            get
+            {
+                var onSaleDate = dates.FirstOrDefault(x => x.type.ToLower() == "onsaledate");
+                if (onSaleDate != null)
+                    return onSaleDate.GetDate();
+
+                return null;
+            } 
+        } 
         public List<ComicPrice> prices { get; set; }
         public Image thumbnail { get; set; }
         public List<Image> images { get; set; }

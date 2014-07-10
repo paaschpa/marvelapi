@@ -86,6 +86,60 @@ namespace Tests
         }
 
         [Test]
+        public void GetAllWolverineComics()
+        {
+            //currently character summaries are limited to 20...get ALL
+            using (var redisClient = new RedisClient())
+            {
+                var wolverine = redisClient.Get<Character>("urn:Characters:1009718");
+
+                var allSummaries = getComicSummaries(wolverine.comics.collectionURI, wolverine.comics.available);
+
+                wolverine.comics.items = allSummaries.ToList();
+
+                redisClient.Set<Character>("urn:Characters:1009718", wolverine);
+            }
+        }
+
+        private IList<ComicSummary> getComicSummaries(string collectionUrl, int total)
+        {
+            int loopTimes = (total/100) + 1;
+            var offset = 0;
+            var ret = new List<ComicSummary>();
+            for (var i = 0; i < loopTimes; i++)
+            {
+                var ts = Guid.NewGuid();
+                var hash = GetMd5Hash(MD5.Create(),
+                                      ts + ConfigurationManager.AppSettings["marvelPrivateKey"] +
+                                      ConfigurationManager.AppSettings["marvelPublicKey"]);
+                var url = collectionUrl
+                    .AddQueryParam("ts", ts)
+                    .AddQueryParam("apikey", "de057f1f51e36402aeeafea0fd5a5936")
+                    .AddQueryParam("hash", hash)
+                    .AddQueryParam("limit", 100)
+                    .AddQueryParam("offset", offset);
+
+                var st = DateTime.Now;
+                Console.WriteLine(st);
+                try
+                {
+                    var resp = url.GetJsonFromUrl().FromJson<ComicDataWrapper>();
+                    Console.WriteLine(offset);
+                    Console.WriteLine(DateTime.Now - st);
+                    offset += 100;
+                    ret.AddRange(resp.data.results.Select(x => new ComicSummary() {name = x.title, resourceURI = "http://gateway.marvel.com/v1/public/comics/" + x.id}));
+                }
+                catch (Exception ex)
+                {
+                    //Swallow Exception
+                    Console.WriteLine(ex); 
+                }
+            }
+
+            return ret;
+        }
+
+        [Test]
         public void readComicsFromRedis()
         {
             using (var redisClient = new RedisClient())
@@ -94,6 +148,22 @@ namespace Tests
                 Assert.IsNotNull(comics);
             }
         }
+
+        [Test]
+        public void readCharacterFromRedis()
+        {
+            using (var redisClient = new RedisClient())
+            {
+                var wolverine = redisClient.Get<Character>("urn:Characters:1009718");
+                var wolverineComicIds = wolverine.comics.items.Select(x => x.resourceURI.Replace("http://gateway.marvel.com/v1/public/comics/", "urn:Comics:"));
+                var wolverineComics = redisClient.GetAll<Comic>(wolverineComicIds).Where(x => x.Value != null).Select(x => x.Value);
+                var o = wolverineComics.Where(x=> x.onSaleDate != null).OrderBy(x => x.onSaleDate).ToList();
+                Assert.IsNotNull(wolverine);
+            }
+        }
+
+        
+
 
         private static string GetMd5Hash(MD5 md5Hash, string input)
         {

@@ -34,6 +34,15 @@ namespace MarvelApi.Models
     {
         public string type { get; set; }
         public string date { get; set; }
+
+        public DateTime? GetDate()
+        {
+            DateTime dt;
+            if(DateTime.TryParse(date, out dt))
+                return dt;
+
+            return null;
+        }
     }
 
     public class ComicPrice
