@@ -16,7 +16,7 @@ namespace Tests
         [Test]
         public void writeToRedisComics()
         {
-            var offset = 24600;
+            var offset = 8000;
 
             for (var i = 0; i <= 400; i++)
             {
@@ -32,20 +32,29 @@ namespace Tests
                     .AddQueryParam("offset", offset)
                     .AddQueryParam("orderBy", "issueNumber");
 
-                var st = DateTime.Now;
-                Console.WriteLine(st);
-                var resp = url.GetJsonFromUrl().FromJson<ComicDataWrapper>();
-                Console.WriteLine(offset);
-                Console.WriteLine(DateTime.Now - st);
-                offset += 100;
-
-                using (var redisClient = new RedisClient())
+                try
                 {
-                    foreach(var c in resp.data.results)
+                    var st = DateTime.Now;
+                    Console.WriteLine(st);
+                    var resp = url.GetJsonFromUrl().FromJson<ComicDataWrapper>();
+                    Console.WriteLine(offset);
+                    Console.WriteLine(DateTime.Now - st);
+                    offset += 100;
+
+                    using (var redisClient = new RedisClient())
                     {
-                        redisClient.Set("urn:Comics:" + c.id, c);
+                        foreach(var c in resp.data.results)
+                        {
+                            redisClient.Set("urn:Comics:" + c.id, c);
+                        }
                     }
                 }
+                catch (Exception ex)
+                {
+                   //swallow exception 
+                    Console.WriteLine(ex);
+                }
+               
             }
         }
 
@@ -86,18 +95,63 @@ namespace Tests
         }
 
         [Test]
+        public void fixRedisCharacter()
+        {
+
+            var ts = Guid.NewGuid();
+            var hash = GetMd5Hash(MD5.Create(),
+                                  ts + ConfigurationManager.AppSettings["marvelPrivateKey"] +
+                                  ConfigurationManager.AppSettings["marvelPublicKey"]);
+            var url = "http://gateway.marvel.com/v1/public/characters/1009718"
+                .AddQueryParam("ts", ts)
+                .AddQueryParam("apikey", "de057f1f51e36402aeeafea0fd5a5936")
+                .AddQueryParam("hash", hash)
+                .AddQueryParam("limit", 100)
+                .AddQueryParam("orderBy", "name");
+
+            var st = DateTime.Now;
+            Console.WriteLine(st);
+            var resp = url.GetJsonFromUrl().FromJson<CharacterDataWrapper>();
+            Console.WriteLine(DateTime.Now - st);
+
+            using (var redisClient = new RedisClient())
+            {
+                foreach (var c in resp.data.results)
+                {
+                    redisClient.Set("urn:Characters:" + c.id, c);
+                }
+            }
+        }
+
+        [Test]
         public void GetAllWolverineComics()
         {
             //currently character summaries are limited to 20...get ALL
             using (var redisClient = new RedisClient())
             {
-                var wolverine = redisClient.Get<Character>("urn:Characters:1009718");
+                var characterKey = "urn:Characters:1009718"; //wolverine
+                //var characterKey = "urn:Characters:1009351"; //hulk
+                var character = redisClient.Get<Character>(characterKey);
 
-                var allSummaries = getComicSummaries(wolverine.comics.collectionURI, wolverine.comics.available);
+                var allSummaries = getComicSummaries(character.comics.collectionURI, character.comics.available);
+                //var allSummaries = getComicSummariesLocal("Wolverine");
 
-                wolverine.comics.items = allSummaries.ToList();
+                character.comics.items = allSummaries.ToList();
 
-                redisClient.Set<Character>("urn:Characters:1009718", wolverine);
+                redisClient.Set<Character>(characterKey, character);
+            }
+        }
+
+        [Test]
+        public void getComicSummariesLocal()
+        {
+            using (var redisClient = new RedisClient())
+            {
+                var comics = redisClient.GetAll<Comic>(redisClient.SearchKeys("urn:Comics:*"));
+                var filtered = comics.Values.Where(x => x.characters.items.Any(y => y.name == "Wolverine"));
+
+                Console.WriteLine(filtered.Count());
+                Assert.IsNotNull(comics);
             }
         }
 
@@ -150,11 +204,23 @@ namespace Tests
         }
 
         [Test]
+        public void readSingleComicFromRedis()
+        {
+            using (var redisClient = new RedisClient())
+            {
+                var comics = redisClient.Get<Comic>("urn:Comics:41248");
+                Assert.IsNotNull(comics);
+            }
+        }
+
+        [Test]
         public void readCharacterFromRedis()
         {
             using (var redisClient = new RedisClient())
             {
-                var wolverine = redisClient.Get<Character>("urn:Characters:1009718");
+                var wolverine = redisClient.Get<Character>("urn:Characters:1009718"); //wolverine
+                //var wolverine = redisClient.Get<Character>("urn:Characters:1009351"); //hulk
+
                 var wolverineComicIds = wolverine.comics.items.Select(x => x.resourceURI.Replace("http://gateway.marvel.com/v1/public/comics/", "urn:Comics:"));
                 var wolverineComics = redisClient.GetAll<Comic>(wolverineComicIds).Where(x => x.Value != null).Select(x => x.Value);
                 var o = wolverineComics.Where(x=> x.onSaleDate != null).OrderBy(x => x.onSaleDate).ToList();
@@ -162,8 +228,24 @@ namespace Tests
             }
         }
 
-        
 
+        [Test]
+        public void Compare()
+        {
+            using (var redisClient = new RedisClient())
+            {
+                var comics = redisClient.GetAll<Comic>(redisClient.SearchKeys("urn:Comics:*"));
+                var comicsIdsFiltered = comics.Values.Where(x => x.characters.items.Any(y => y.name == "Wolverine")).Select(x=> x.id.ToString());
+
+                var characterComicIds = redisClient.Get<Character>("urn:Characters:1009718")
+                    .comics.items.Where(x => !String.IsNullOrEmpty(x.resourceURI)).Select(x => x.resourceURI.Replace("http://gateway.marvel.com/v1/public/comics/",""));
+
+                var diff = characterComicIds.Except(comicsIdsFiltered);
+
+                Console.WriteLine(diff);
+                Assert.IsNotNull(comics);
+            }
+        }
 
         private static string GetMd5Hash(MD5 md5Hash, string input)
         {

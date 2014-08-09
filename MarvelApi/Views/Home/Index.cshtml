@@ -28,6 +28,12 @@
 
             alert(names);
         };
+
+        $scope.showImageModal = function(thumbnail) {
+            //alert('hi');
+            $scope.modalImagePath = thumbnail.path + "." + thumbnail.extension;
+            $('#myModal').modal('show');
+        };
     }
 
 </script>
@@ -35,19 +41,33 @@
 <div ng-app>
     <div ng-controller="ComicCtrl">
         <table class="table table-striped">
-        <tbody>
-        <tr data-ng-repeat="comic in comicWrapper.data.results">
-            <td>
-                {{comic.title}} - {{comic.description}}
-                <p>
-                    <button ng-click="getCharacters({{comic.id}})">Characters</button>
-                </p>
-            </td>
-            <td>
-                <img ng-src="{{comic.thumbnail.path}}.{{comic.thumbnail.extension}}" style="width:50%; height: auto"/>
-            </td>
-        </tr>
-        </tbody>
+            <tbody>
+                <tr data-ng-repeat="comic in comicWrapper.data.results">
+                    <td>
+                        {{comic.title}} - {{comic.description}}
+                        <p>
+                            <button ng-click="getCharacters({{comic.id}})">Characters</button>
+                        </p>
+                    </td>
+                    <td>
+                        <img ng-src="{{comic.thumbnail.path}}/portrait_small.{{comic.thumbnail.extension}}" ng-click="showImageModal(comic.thumbnail)"/>
+                    </td>
+                </tr>
+            </tbody>
         </table>
+        
+        <div id="myModal" class="modal fade">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                <h4 class="modal-title">Title</h4>
+              </div>
+              <div class="modal-body">
+                  <img ng-src="{{modalImagePath}}"/>
+              </div>
+            </div><!-- /.modal-content -->
+          </div><!-- /.modal-dialog -->
+        </div><!-- /.modal -->
     </div>
 </div>
