@@ -6,17 +6,36 @@
 
 <div ng-app>
     <div ng-controller="StoryCtrl">
-        <div id="storyText">
-            <div ng-repeat="ln in storyText">
-                {{ln}} 
+
+        <div class="row">
+            <div class="span4">
+                <div id="storyText">
+                    <div ng-repeat="ln in storyText">
+                        {{ln}} 
+                    </div>
+                </div>
+                
+                <div class="form-inline" role="form">
+                    <div class="form-group">
+                        <input type="text" class="form-control" id="command" ng-model="user.command">
+                        <button class="btn btn-default" ng-click="receiveCommand()">Send</button>
+                    </div>
+                </div>
             </div>
-        </div>
-        
-        <div class="form-inline" role="form">
-            <div class="form-group">
-                <input type="text" class="form-control" id="command" ng-model="user.command">
-                <button class="btn btn-default" ng-click="receiveCommand()">Send</button>
+            
+            <div class="span5">
+                <div id="comicIds">
+                    <input type="text" ng-model="room.ComicIds" style="width:275px"/>
+                </div> 
+                <div id="cover">
+                    <img ng-src="{{comic.thumbnail.path}}/portrait_uncanny.{{comic.thumbnail.extension}}"/>
+                </div>
+
+                <p id="comicTitle"> </p>
+                <p id="characters"> </p>
+
             </div>
+
         </div>
 
     </div>
@@ -26,6 +45,7 @@
     function StoryCtrl($scope, $http) {
         $scope.storyText = [];
         $scope.room = {};
+        $scope.comic = {};
         $scope.storyText.push(["Can you help me find some comics"]);
 
         $scope.sendCommand = function(output) {
@@ -34,12 +54,16 @@
 
         $scope.receiveCommand = function () {
             switch ($scope.user.command) {
-                case 'N':
-                    var roomId = $scope.room.Neighbors[$scope.user.command];
-                    setRoom(roomId);
-                    return;
-                default:
-                    $scope.sendCommand('What you talking about, player');
+            case 'N':
+                var roomId = $scope.room.Neighbors[$scope.user.command];
+                setRoom(roomId);
+                return;
+            }
+
+            var cmd = $scope.user.command.toLowerCase();
+            if (cmd.lastIndexOf('look', 0) === 0) {
+                var comicId = cmd.replace('look ', '');
+                setComic(comicId);
             }
         };
 
@@ -55,7 +79,20 @@
                 $scope.sendCommand($scope.room.Description);
             });
         }
-                
+        
+        function setComic(comicId) {
+            var comicRequest = $http.get("/api/comics/local/" + comicId);
+            comicRequest.success(function(data) {
+                $scope.comic = data;
+                var _characters = "";
+                var delim = "";
+                angular.forEach(data.characters.items, function(value, key) {
+                    _characters += delim + value.name;
+                    delim = ", ";
+                });
+                $('#comicTitle').html(data.title);
+                $('#characters').html(_characters);
+            });
+        }
     }
-
 </script>

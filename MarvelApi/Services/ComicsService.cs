@@ -7,6 +7,7 @@ using System.Text;
 using System.Web;
 using MarvelApi.Models;
 using ServiceStack;
+using ServiceStack.Redis;
 
 namespace MarvelApi.Services
 {
@@ -15,11 +16,17 @@ namespace MarvelApi.Services
     {
         public string Title { get; set; }
     }
-    
+
     [Route("/Comics/{ComicId}/Characters")]
     public class ComicCharactersRequest
     {
         public int ComicId { get; set; }
+    }
+
+    [Route("/Comics/Local/{Id}")]
+    public class LocalComicRequest
+    {
+        public int Id { get; set; }
     }
 
     public class ComicsService : Service
@@ -51,6 +58,15 @@ namespace MarvelApi.Services
             var resp = url.GetJsonFromUrl().FromJson<CharacterDataWrapper>();
 
             return resp;
+        }
+
+        public Comic Get(LocalComicRequest request)
+        {
+            using (var redisClient = new RedisClient())
+            {
+                var comic = redisClient.Get<Comic>("urn:Comics:" + request.Id);
+                return comic;
+            }
         }
 
         private static string GetMd5Hash(MD5 md5Hash, string input)

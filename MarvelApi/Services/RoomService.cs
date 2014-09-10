@@ -29,7 +29,8 @@ namespace MarvelApi.Services
                             {"S", Guid.Empty},
                             {"E", Guid.Empty},
                             {"W", Guid.Empty}
-                        }
+                        },
+                    ComicIds = new List<int>() {6575, 11363, 11011, 27439}
                 };
             }
             return new Room()
@@ -42,7 +43,8 @@ namespace MarvelApi.Services
                             {"S", Guid.Empty},
                             {"E", Guid.Empty},
                             {"W", Guid.Empty}
-                        }
+                        },
+                    ComicIds = new List<int>(){6960, 483, 22784, 47729}
                 };
         }
        

@@ -10,5 +10,6 @@ namespace MarvelApi.Models
         public Guid Id { get; set; }
         public string Description { get; set; }
         public IDictionary<string, Guid> Neighbors { get; set; }
+        public List<int> ComicIds { get; set; }
     }
 }
