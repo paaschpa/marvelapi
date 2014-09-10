@@ -4,6 +4,7 @@ using System.Linq;
 using System.Web;
 using MarvelApi.Models;
 using ServiceStack;
+using ServiceStack.Redis;
 
 namespace MarvelApi.Services
 {
@@ -17,35 +18,11 @@ namespace MarvelApi.Services
     {
         public Room Get(RoomRequest request)
         {
-            if (request.FindId == Guid.Empty)
+            using (var redisClient = new RedisClient())
             {
-                return new Room()
-                {
-                    Id = Guid.NewGuid(),
-                    Description = "Go North young man!",
-                    Neighbors = new Dictionary<string, Guid>
-                        {
-                            {"N", Guid.Empty},
-                            {"S", Guid.Empty},
-                            {"E", Guid.Empty},
-                            {"W", Guid.Empty}
-                        },
-                    ComicIds = new List<int>() {6575, 11363, 11011, 27439}
-                };
+                var room = redisClient.Get<Room>("urn:Rooms:" + request.FindId.ToString());
+                return room;
             }
-            return new Room()
-                {
-                    Id = Guid.NewGuid(),
-                    Description = "So you like reading comics do ya?",
-                    Neighbors = new Dictionary<string, Guid>
-                        {
-                            {"N", Guid.Empty},
-                            {"S", Guid.Empty},
-                            {"E", Guid.Empty},
-                            {"W", Guid.Empty}
-                        },
-                    ComicIds = new List<int>(){6960, 483, 22784, 47729}
-                };
         }
        
     }

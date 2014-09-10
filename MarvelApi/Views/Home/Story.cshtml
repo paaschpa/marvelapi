@@ -53,27 +53,27 @@
         };
 
         $scope.receiveCommand = function () {
-            switch ($scope.user.command) {
-            case 'N':
-                var roomId = $scope.room.Neighbors[$scope.user.command];
+            var cmdLower = $scope.user.command.toLowerCase();
+            var directions = ['n', 's', 'e', 'w'];
+            if (directions.indexOf(cmdLower) !== -1) {
+                var roomId = $scope.room.Neighbors[cmdLower.toUpperCase()];
                 setRoom(roomId);
                 return;
             }
 
-            var cmd = $scope.user.command.toLowerCase();
-            if (cmd.lastIndexOf('look', 0) === 0) {
-                var comicId = cmd.replace('look ', '');
+            if (cmdLower.lastIndexOf('look', 0) === 0) {
+                var comicId = cmdLower.replace('look ', '');
                 setComic(comicId);
             }
         };
 
-        var roomRequest = $http.get("/api/room");
+        var roomRequest = $http.get("/api/room?findId=ccea3783-e5c4-40a0-ae01-3d17824f8b31");
         roomRequest.success(function(data) {
             $scope.room = data;
         });
 
         function setRoom(roomId) {
-            var roomRequest = $http.get("/api/room?roomId=" + roomId);
+            var roomRequest = $http.get("/api/room?findId=" + roomId);
             roomRequest.success(function(data) {
                 $scope.room = data;
                 $scope.sendCommand($scope.room.Description);
