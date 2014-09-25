@@ -33,6 +33,9 @@ namespace MarvelApi.Services
     {
         private string publicKey = ConfigurationManager.AppSettings["marvelPublicKey"];
         private string privateKey = ConfigurationManager.AppSettings["marvelPrivateKey"];
+
+        public IRedisClientsManager RedisClientManager { get; set; }
+
         public ComicDataWrapper Get(ComicRequest request)
         {
             var ts = Guid.NewGuid();
@@ -62,7 +65,7 @@ namespace MarvelApi.Services
 
         public Comic Get(LocalComicRequest request)
         {
-            using (var redisClient = new RedisClient())
+            using (var redisClient = RedisClientManager.GetClient())
             {
                 var comic = redisClient.Get<Comic>("urn:Comics:" + request.Id);
                 return comic;

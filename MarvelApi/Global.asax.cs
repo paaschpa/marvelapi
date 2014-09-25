@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Linq;
 using System.Reflection;
 using System.Web;
@@ -9,6 +10,9 @@ using System.Web.Routing;
 using Funq;
 using MarvelApi.Services;
 using ServiceStack;
+using ServiceStack.Caching;
+using ServiceStack.Mvc;
+using ServiceStack.Redis;
 
 namespace MarvelApi
 {
@@ -35,6 +39,12 @@ namespace MarvelApi
 
         public override void Configure(Container container)
         {
+            var redisCon = ConfigurationManager.AppSettings["redisUrl"].ToString();
+            container.Register<IRedisClientsManager>(new PooledRedisClientManager(20, 60, redisCon));
+            container.Register<ICacheClient>(c => (ICacheClient)c.Resolve<IRedisClientsManager>().GetCacheClient());
+
+            //Set MVC to use the same Funq IOC as ServiceStack
+            ControllerBuilder.Current.SetControllerFactory(new FunqControllerFactory(container));
         }
     }
 }

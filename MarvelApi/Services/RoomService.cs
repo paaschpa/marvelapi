@@ -16,9 +16,11 @@ namespace MarvelApi.Services
 
     public class RoomService : Service
     {
+        public IRedisClientsManager RedisClientManager { get; set; }
+
         public Room Get(RoomRequest request)
         {
-            using (var redisClient = new RedisClient())
+            using (var redisClient = RedisClientManager.GetClient())
             {
                 var room = redisClient.Get<Room>("urn:Rooms:" + request.FindId.ToString());
                 return room;
