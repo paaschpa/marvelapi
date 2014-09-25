@@ -190,9 +190,6 @@
     <Content Include="Views\_ViewStart.cshtml" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Web1.config" />
-  </ItemGroup>
-  <ItemGroup>
     <Content Include="Views\Home\Story.cshtml" />
   </ItemGroup>
   <ItemGroup>
